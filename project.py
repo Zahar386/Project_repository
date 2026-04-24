@@ -31,6 +31,8 @@ class Player:
         pygame.draw.polygon(screen, "Black", ((self.player_pos.x-21,self.player_pos.y+20),(self.player_pos.x+20,self.player_pos.y+20),(self.player_pos.x,self.player_pos.y-20)), 1)
         pygame.draw.circle(screen, self.color, (self.player_pos.x,self.player_pos.y-25), 20)
         pygame.draw.circle(screen, "Black", (self.player_pos.x,self.player_pos.y-25), 20, 1)
+        if self.happy == True:
+            pygame.draw.polygon(screen, "White", ((self.player_pos.x-10,self.player_pos.y-20),(self.player_pos.x+10,self.player_pos.y-20),(self.player_pos.x,self.player_pos.y-20+7)))
     
     def movement(self):
         if self.direction == "left":
@@ -120,12 +122,17 @@ class Bonus(pygame.sprite.Sprite):
             elif self.image == self.bonus_frames[1]:
                 skip_turns += 1
             elif self.image == self.bonus_frames[2]:
-                skip_turns += 2
+                if turn == "Red":
+                    pl1.happy = True
+                    pl2.score = int(pl2.score/2)
+                elif turn == "Blue":
+                    pl2.happy = True
+                    pl1.score = int(pl1.score/2)
             elif self.image == self.bonus_frames[3]:
                 if turn == "Red":
-                    pl2.happy = True
-                elif turn == "Blue":
                     pl1.happy = True
+                elif turn == "Blue":
+                    pl2.happy = True
             elif self.image == self.bonus_frames[4]:
                 if turn == "Red":
                     if pl2.happy == False:
@@ -153,17 +160,19 @@ class Bonus(pygame.sprite.Sprite):
                 elif turn == "Blue":
                     pl1.score *= 2
             elif self.image == self.bonus_frames[8]:
-                if turn == "Red":
-                    pl2.score -= 5
-                elif turn == "Blue":
+                choice = random.randint(0,1)
+                if choice == 0:
                     pl1.score -= 5
-                skip_turns += 2
+                    pl2.score += 5
+                elif choice == 1:
+                    pl2.score -= 5
+                    pl1.score += 5
             elif self.image == self.bonus_frames[9]:
                 if turn == "Red":
-                    pl2.happy = True
+                    pl1.happy = True
                     pl2.score -= 3
                 elif turn == "Blue":
-                    pl1.happy = True
+                    pl2.happy = True
                     pl1.score -= 3
             elif self.image == self.bonus_frames[10]:
                 if turn == "Red":
@@ -171,9 +180,9 @@ class Bonus(pygame.sprite.Sprite):
                 elif turn == "Blue":
                     pl1.happy = False
             elif self.image == self.bonus_frames[11]:
-                if turn == "Red" and pl2.happy == True:
+                if turn == "Red" and pl1.happy == True:
                     pl2.score = int(pl2.score/2)
-                elif turn == "Blue" and pl1.happy == True:
+                elif turn == "Blue" and pl2.happy == True:
                     pl1.score = int(pl1.score/2)
             elif self.image == self.bonus_frames[12]:
                 if turn == "Red":
@@ -231,7 +240,7 @@ time = pygame.time.Clock()
 game_status = 0
 turn = "Red"
 roll = False
-turns_till_the_end = 6
+turns_till_the_end = 40
 
 fon_obj = []
 players = []
@@ -274,14 +283,16 @@ while True:
                         for bonus in bonuses:
                             bonus.collition(pl2.player_pos)
                     turns_till_the_end -= 1
-            if pygame.mouse.get_pos()[0] in range(int(screen.get_width()/2-restart_button.get_width()/2),int(screen.get_width()/2+restart_button.get_width()/2)) and pygame.mouse.get_pos()[1] in range(int(screen.get_height()/2-restart_button.get_height()+100/2),int(screen.get_height()/2+restart_button.get_height()/2)+100) and game_status == 2:
+            if pygame.mouse.get_pos()[0] in range(int(screen.get_width()/2-restart_button.get_width()/2),int(screen.get_width()/2+restart_button.get_width()/2)) and pygame.mouse.get_pos()[1] in range(int(screen.get_height()/2-restart_button.get_height()/2+100),int(screen.get_height()/2+restart_button.get_height()/2)+100) and game_status == 2:
                 game_status = 0
                 turn = "Red"
                 turns_till_the_end = 40
-                pl1.score = 25
-                pl2.score = 25
                 pl1.player_pos = pygame.Vector2(1085,665)
+                pl1.direction = "left"
+                pl1.score = 25
                 pl2.player_pos = pygame.Vector2(1055,700)
+                pl2.direction = "left"
+                pl2.score = 25
                     
     if turns_till_the_end <= 0 or pl1.score <= 0 or pl2.score <= 0:
         game_status = 2
@@ -295,7 +306,7 @@ while True:
         
     if game_status == 0:
         screen.blit(name_of_game, (screen.get_width()/2-name_of_game.get_width()/2,screen.get_height()/2-name_of_game.get_height()/2))
-        screen.blit(start_button, (300,485))
+        screen.blit(start_button, (screen.get_width()/2-start_button.get_width()/2,screen.get_height()/2-restart_button.get_height()/2+100))
     elif game_status == 1:
         money1 = font2.render(f'{pl1.score} $', True, "Blue")
         screen.blit(money1, (1200-money1.get_width(),0))
@@ -315,6 +326,10 @@ while True:
             player.draw()
         dice.draw()
     elif game_status == 2:
+        money1 = font2.render(f'{pl1.score} $', True, "Blue")
+        screen.blit(money1, (1200-money1.get_width(),0))
+        money2 = font2.render(f'{pl2.score} $', True, "Red")
+        screen.blit(money2, (0,0))
         if pl1.score < pl2.score:
             winner = font1.render('Победил красный!', True, 'Red')
         elif pl1.score > pl2.score:
